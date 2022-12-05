@@ -9,27 +9,21 @@ enum Move {
 impl Move {
     pub fn outcome(&self, oponent: &Self) -> i32 {
         match self {
-            Move::Rock => {
-                match oponent {
-                    Move::Rock => 3,
-                    Move::Paper => 0,
-                    Move::Scissor => 6
-                }
-            }
-            Move::Paper => {
-                match oponent {
-                    Move::Rock => 6,
-                    Move::Paper => 3,
-                    Move::Scissor => 0
-                }
-            }
-            Move::Scissor => {
-                match oponent {
-                    Move::Rock => 0,
-                    Move::Paper => 6,
-                    Move::Scissor => 3
-                }
-            }
+            Move::Rock => match oponent {
+                Move::Rock => 3,
+                Move::Paper => 0,
+                Move::Scissor => 6,
+            },
+            Move::Paper => match oponent {
+                Move::Rock => 6,
+                Move::Paper => 3,
+                Move::Scissor => 0,
+            },
+            Move::Scissor => match oponent {
+                Move::Rock => 0,
+                Move::Paper => 6,
+                Move::Scissor => 3,
+            },
         }
     }
 
@@ -47,7 +41,7 @@ impl Move {
         match self {
             Move::Rock => Move::Paper,
             Move::Paper => Move::Scissor,
-            Move::Scissor => Move::Rock
+            Move::Scissor => Move::Rock,
         }
     }
 
@@ -55,7 +49,7 @@ impl Move {
         match self {
             Move::Rock => Move::Scissor,
             Move::Paper => Move::Rock,
-            Move::Scissor => Move::Paper
+            Move::Scissor => Move::Paper,
         }
     }
 
@@ -63,7 +57,7 @@ impl Move {
         match self {
             Move::Rock => Move::Rock,
             Move::Paper => Move::Paper,
-            Move::Scissor => Move::Scissor
+            Move::Scissor => Move::Scissor,
         }
     }
 
@@ -71,18 +65,21 @@ impl Move {
         match self {
             Move::Rock => 1,
             Move::Paper => 2,
-            Move::Scissor => 3
+            Move::Scissor => 3,
         }
     }
 }
 
 pub fn group_sums(input_lines: Vec<&str>) -> Vec<i32> {
-    input_lines.into_iter().map(|line| {
-        let mut splitted = line.split_whitespace();
-        let oponent = splitted.next().unwrap();
-        let own_move = splitted.next().unwrap();
-        evaluate_move(oponent, own_move)
-    }).collect()
+    input_lines
+        .into_iter()
+        .map(|line| {
+            let mut splitted = line.split_whitespace();
+            let oponent = splitted.next().unwrap();
+            let own_move = splitted.next().unwrap();
+            evaluate_move(oponent, own_move)
+        })
+        .collect()
 }
 
 fn evaluate_move(oponent: &str, own: &str) -> i32 {
@@ -93,27 +90,33 @@ fn evaluate_move(oponent: &str, own: &str) -> i32 {
 }
 
 pub fn group_sums_part_two(input_lines: Vec<&str>) -> Vec<i32> {
-    input_lines.into_iter().map(|line| {
-        let mut splitted = line.split_whitespace();
-        let oponent = splitted.next().unwrap();
-        let own_move = splitted.next().unwrap();
-        evaluate_what_to_choose(oponent, own_move)
-    }).collect()
+    input_lines
+        .into_iter()
+        .map(|line| {
+            let mut splitted = line.split_whitespace();
+            let oponent = splitted.next().unwrap();
+            let own_move = splitted.next().unwrap();
+            evaluate_what_to_choose(oponent, own_move)
+        })
+        .collect()
 }
 
 fn evaluate_what_to_choose(oponent: &str, strategy: &str) -> i32 {
-    let own_move_fn_map: HashMap<&str, fn(&Move) -> Move> = HashMap::from([("X", Move::to_loose as fn(&Move) -> Move), ("Y", Move::to_draw as fn(&Move) -> Move), ("Z", Move::to_win as fn(&Move) -> Move)]);
+    let own_move_fn_map: HashMap<&str, fn(&Move) -> Move> = HashMap::from([
+        ("X", Move::to_loose as fn(&Move) -> Move),
+        ("Y", Move::to_draw as fn(&Move) -> Move),
+        ("Z", Move::to_win as fn(&Move) -> Move),
+    ]);
     let own_move = own_move_fn_map.get(strategy).unwrap()(&Move::from(oponent));
     let win_points = own_move.outcome(&Move::from(oponent));
     own_move.move_value() + win_points
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::Move;
     use super::group_sums;
     use super::group_sums_part_two;
+    use super::Move;
 
     #[test]
     fn test_moves_outcome() {
@@ -135,7 +138,9 @@ mod tests {
 
     #[test]
     fn test_evaluate_what_to_choose() {
-        assert_eq!(group_sums_part_two(vec!["A Y", "B X", "C Z"]), vec![4, 1, 7])
+        assert_eq!(
+            group_sums_part_two(vec!["A Y", "B X", "C Z"]),
+            vec![4, 1, 7]
+        )
     }
 }
-

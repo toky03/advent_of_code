@@ -39,9 +39,6 @@ fn is_overlapping(left: Vec<i32>, right: Vec<i32>) -> bool {
     let intersection = left_set.intersection(&right_set);
 
     intersection.into_iter().collect::<Vec<&i32>>().len() > 0
-
-
-
 }
 
 pub fn group_sublists(input_lines: Vec<&str>) -> Vec<i32> {
@@ -52,7 +49,8 @@ pub fn group_sublists(input_lines: Vec<&str>) -> Vec<i32> {
                 return 1;
             }
             0
-        }).collect()
+        })
+        .collect()
 }
 
 #[cfg(test)]
