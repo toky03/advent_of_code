@@ -10,7 +10,6 @@ pub fn group_sums(input_lines: Vec<&str>) -> Vec<i32> {
     })
 }
 
-
 pub fn top_tree_elfs(mut counts: Vec<i32>) -> i32 {
     counts.sort();
     let max = counts.get(counts.len() - 1).unwrap();
@@ -34,4 +33,3 @@ mod tests {
         assert_eq!(top_tree_elfs(vec![5, 1, 7, 8, 2]), 20);
     }
 }
-
