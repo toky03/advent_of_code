@@ -208,9 +208,9 @@ mod tests {
 
         let expected_cargo_names = string_to_cargo_names("123");
         let expected_setup_lines = vec![
-            String::from("     [D]     "),
-            String::from("[N]  [C]     "),
-            String::from("[Z]  [D]  [P]"),
+            String::from("    [D]    "),
+            String::from("[N] [C]    "),
+            String::from("[Z] [D] [P]"),
         ];
         let expected_move_instructions = vec![
             String::from("move 1 from 2 to 1"),
