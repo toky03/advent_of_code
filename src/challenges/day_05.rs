@@ -15,7 +15,11 @@ impl Ship {
         Ship { cargos }
     }
 
-    pub fn apply_instruction(&self, move_instruction: MoveInstruction) -> Self {
+    pub fn apply_instruction(
+        &self,
+        move_instruction: MoveInstruction,
+        is_crate_mover_9001: bool,
+    ) -> Self {
         let mut cargos = self.cargos.clone();
 
         let mut from: Vec<String> = cargos
@@ -33,7 +37,9 @@ impl Ship {
             let moved_container = from.pop().unwrap();
             moved_containers.push(moved_container);
         }
-        moved_containers.reverse();
+        if is_crate_mover_9001 {
+            moved_containers.reverse();
+        }
         to.append(&mut moved_containers);
         cargos.insert(move_instruction.from_cargo, from);
         cargos.insert(move_instruction.to_cargo, to);
@@ -45,17 +51,36 @@ impl Ship {
 struct ShipSetup {
     setup_lines: Vec<String>,
     cargo_names: Vec<String>,
+    instruction_lines: Vec<String>,
 }
 
-fn find_setup_lines(input_lines: &Vec<&str>) -> ShipSetup {
+impl ShipSetup {
+    fn read_initial_cargos(&self) -> BTreeMap<String, Vec<String>> {
+        let mut initial_cargos: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        for (index, cargo_name) in self.cargo_names.iter().enumerate() {
+            let mut cargo_stack: Vec<String> = self
+                .setup_lines
+                .iter()
+                .map(|setup_line| String::from(setup_line.chars().nth((index * 4) + 1).unwrap()))
+                .filter(|char| !char.trim().is_empty())
+                .collect();
+            cargo_stack.reverse();
+            initial_cargos.insert(cargo_name.clone(), cargo_stack);
+        }
+        initial_cargos
+    }
+
+    fn read_instruction_lines(&self) -> Vec<String> {
+        self.instruction_lines.clone()
+    }
+}
+
+fn create_ship_setup(input_lines: &Vec<&str>) -> ShipSetup {
     let names_regex = Regex::new(r"(\s*(\d+)\s)+").unwrap();
     let raw_names: &str = input_lines
         .into_iter()
         .map(|names| names.to_owned())
-        .filter(|line| {
-            names_regex.is_match(line)
-        }
-        )
+        .filter(|line| names_regex.is_match(line))
         .collect::<Vec<&str>>()
         .get(0)
         .unwrap();
@@ -70,9 +95,15 @@ fn find_setup_lines(input_lines: &Vec<&str>) -> ShipSetup {
         .into_iter()
         .map(|line| String::from(line.to_owned()))
         .collect();
+    let instruction_lines = input_lines[index + 1..]
+        .into_iter()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| String::from(line.to_owned()))
+        .collect();
     ShipSetup {
         setup_lines,
         cargo_names,
+        instruction_lines,
     }
 }
 
@@ -84,33 +115,20 @@ fn string_to_cargo_names(input: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn apply_all_instructions(input_lines: Vec<&str>) -> String {
-    let initial_cargos = BTreeMap::from([
-        (String::from("1"), string_to_vec_of_strings("DLVTMHF")),
-        ("2".to_string(), string_to_vec_of_strings("HQGJCTNP")),
-        ("3".to_string(), string_to_vec_of_strings("RSDMPH")),
-        ("4".to_string(), string_to_vec_of_strings("LBVF")),
-        ("5".to_string(), string_to_vec_of_strings("NHGLQ")),
-        ("6".to_string(), string_to_vec_of_strings("WBDGRMP")),
-        ("7".to_string(), string_to_vec_of_strings("GMNRCHLQ")),
-        ("8".to_string(), string_to_vec_of_strings("CLW")),
-        ("9".to_string(), string_to_vec_of_strings("RDLQJZMT")),
-    ]);
-    apply_instructions_on_initial_ship(initial_cargos, input_lines)
-}
-
-pub fn apply_instructions_on_initial_ship(
-    initial_cargos: BTreeMap<String, Vec<String>>,
+pub fn apply_instructions(
     input_lines: Vec<&str>,
+    is_crate_mover_9001: bool,
 ) -> String {
+    let ship_setup = create_ship_setup(&input_lines);
+    let move_instructions = ship_setup.read_instruction_lines();
+    let initial_cargos = ship_setup.read_initial_cargos();
     let initial_ship = Ship::new(initial_cargos);
-    let output: Ship = input_lines
+    let output: Ship = move_instructions
         .into_iter()
-        .map(|instruction| MoveInstruction::from_str(instruction).unwrap())
+        .map(|instruction| MoveInstruction::from_str(&instruction).unwrap())
         .fold(initial_ship, |acc, instruction| {
-            acc.apply_instruction(instruction)
+            acc.apply_instruction(instruction, is_crate_mover_9001)
         });
-    println!("output: {:?}", output);
     output
         .cargos
         .values()
@@ -153,12 +171,11 @@ fn string_to_vec_of_strings(input: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::apply_instructions_on_initial_ship;
-    use super::find_setup_lines;
+    use super::create_ship_setup;
     use super::string_to_cargo_names;
     use super::string_to_vec_of_strings;
     use super::ShipSetup;
-    use crate::challenges::day_05::{MoveInstruction, Ship};
+    use crate::challenges::day_05::{apply_instructions, MoveInstruction, Ship};
     use std::collections::BTreeMap;
     use std::str::FromStr;
 
@@ -178,10 +195,11 @@ mod tests {
     #[test]
     fn find_setup() {
         let input_lines = vec![
-            "     [D]     ",
-            "[N]  [C]     ",
-            "[Z]  [D]  [P]",
-            " 1    2    3",
+            "    [D]    ",
+            "[N] [C]    ",
+            "[Z] [D] [P]",
+            " 1   2   3",
+            "            ",
             "move 1 from 2 to 1",
             "move 3 from 1 to 3",
             "move 2 from 2 to 1",
@@ -194,26 +212,62 @@ mod tests {
             String::from("[N]  [C]     "),
             String::from("[Z]  [D]  [P]"),
         ];
+        let expected_move_instructions = vec![
+            String::from("move 1 from 2 to 1"),
+            String::from("move 3 from 1 to 3"),
+            String::from("move 2 from 2 to 1"),
+            String::from("move 1 from 1 to 2"),
+        ];
 
-        let ship_setup = find_setup_lines(&input_lines);
+        let ship_setup = create_ship_setup(&input_lines);
         assert_eq!(
             ship_setup,
             ShipSetup {
                 cargo_names: expected_cargo_names,
-                setup_lines: expected_setup_lines
+                setup_lines: expected_setup_lines,
+                instruction_lines: expected_move_instructions,
             }
         )
     }
 
     #[test]
-    fn test_application() {
-        let initial_cargos = BTreeMap::from([
+    fn test_cargo_initialization() {
+        let input_lines = vec![
+            "    [D]    ",
+            "[N] [C]    ",
+            "[Z] [M] [P]",
+            " 1   2   3",
+            "            ",
+            "move 1 from 2 to 1",
+            "move 3 from 1 to 3",
+            "move 2 from 2 to 1",
+            "move 1 from 1 to 2",
+        ];
+
+        let expected_cargo_names = BTreeMap::from([
             (String::from("1"), string_to_vec_of_strings("ZN")),
             ("2".to_string(), string_to_vec_of_strings("MCD")),
             ("3".to_string(), string_to_vec_of_strings("P")),
         ]);
 
+
+        let ship_setup = create_ship_setup(&input_lines);
+        assert_eq!(
+            ship_setup.read_initial_cargos(),
+            expected_cargo_names
+        )
+
+    }
+
+    #[test]
+    fn test_application_part_one() {
+
         let input_lines = vec![
+            "    [D]    ",
+            "[N] [C]    ",
+            "[Z] [M] [P]",
+            " 1   2   3",
+            "            ",
             "move 1 from 2 to 1",
             "move 3 from 1 to 3",
             "move 2 from 2 to 1",
@@ -221,8 +275,29 @@ mod tests {
         ];
 
         assert_eq!(
-            apply_instructions_on_initial_ship(initial_cargos, input_lines),
+            apply_instructions(input_lines, false),
             "CMZ"
+        );
+    }
+
+    #[test]
+    fn test_application_part_two() {
+
+        let input_lines = vec![
+            "    [D]    ",
+            "[N] [C]    ",
+            "[Z] [M] [P]",
+            " 1   2   3",
+            "            ",
+            "move 1 from 2 to 1",
+            "move 3 from 1 to 3",
+            "move 2 from 2 to 1",
+            "move 1 from 1 to 2",
+        ];
+
+        assert_eq!(
+            apply_instructions(input_lines, true),
+            "MCD"
         );
     }
 
@@ -235,7 +310,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ship_setup() {
+    fn test_ship_setup_part_one() {
         let cargos = BTreeMap::from([
             ("1".to_string(), vec!["Z".to_string(), "N".to_string()]),
             (
@@ -246,8 +321,10 @@ mod tests {
         ]);
 
         let ship = Ship::new(cargos);
-        let ship_new =
-            ship.apply_instruction(MoveInstruction::from_str("move 1 from 2 to 1").unwrap());
+        let ship_new = ship.apply_instruction(
+            MoveInstruction::from_str("move 1 from 2 to 1").unwrap(),
+            false,
+        );
 
         let expected_cargos = BTreeMap::from([
             (
