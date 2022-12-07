@@ -115,10 +115,7 @@ fn string_to_cargo_names(input: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn apply_instructions(
-    input_lines: Vec<&str>,
-    is_crate_mover_9001: bool,
-) -> String {
+pub fn apply_instructions(input_lines: Vec<&str>, is_crate_mover_9001: bool) -> String {
     let ship_setup = create_ship_setup(&input_lines);
     let move_instructions = ship_setup.read_instruction_lines();
     let initial_cargos = ship_setup.read_initial_cargos();
@@ -250,18 +247,12 @@ mod tests {
             ("3".to_string(), string_to_vec_of_strings("P")),
         ]);
 
-
         let ship_setup = create_ship_setup(&input_lines);
-        assert_eq!(
-            ship_setup.read_initial_cargos(),
-            expected_cargo_names
-        )
-
+        assert_eq!(ship_setup.read_initial_cargos(), expected_cargo_names)
     }
 
     #[test]
     fn test_application_part_one() {
-
         let input_lines = vec![
             "    [D]    ",
             "[N] [C]    ",
@@ -274,15 +265,11 @@ mod tests {
             "move 1 from 1 to 2",
         ];
 
-        assert_eq!(
-            apply_instructions(input_lines, false),
-            "CMZ"
-        );
+        assert_eq!(apply_instructions(input_lines, false), "CMZ");
     }
 
     #[test]
     fn test_application_part_two() {
-
         let input_lines = vec![
             "    [D]    ",
             "[N] [C]    ",
@@ -295,10 +282,7 @@ mod tests {
             "move 1 from 1 to 2",
         ];
 
-        assert_eq!(
-            apply_instructions(input_lines, true),
-            "MCD"
-        );
+        assert_eq!(apply_instructions(input_lines, true), "MCD");
     }
 
     #[test]
