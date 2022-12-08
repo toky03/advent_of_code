@@ -16,11 +16,13 @@ impl Terminal {
     }
 
     fn change_up(&self) -> Terminal {
-        let mut directories: Vec<&str> = self
-            .current_directory
-            .split("/").collect();
+        let mut directories: Vec<&str> = self.current_directory.split("/").collect();
         directories.pop();
-        let super_directory: String = directories.into_iter().map(|dir| dir.to_string()).collect::<Vec<String>>().join("/");
+        let super_directory: String = directories
+            .into_iter()
+            .map(|dir| dir.to_string())
+            .collect::<Vec<String>>()
+            .join("/");
         Terminal {
             accumulated_lines: format!(
                 "{}\n{}",
